@@ -1,8 +1,15 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  
+  <!-- 
+    For more info about signing and what certs to use, see the following links:
+    https://dev.azure.com/devdiv/DevDiv/_wiki/wikis/DevDiv.wiki/650/MicroBuild-Signing
+    https://dev.azure.com/devdiv/DevDiv/_wiki/wikis/DevDiv.wiki/658/Signing-Cert-Guidance
+  -->
+  
   <PropertyGroup>
     <IntermediateOutputPathSuffix>signlayout\</IntermediateOutputPathSuffix>
   </PropertyGroup>
-  
+
   <Import Project="SetupProjectBefore.settings" />
   <Import Project="$(TargetsPath)\Common.Shim.targets" />
   
@@ -84,6 +91,7 @@
       </FilesToSign>
     </ItemGroup>
   </Target>
+
   <Target Name="_AddPylanceFiles" BeforeTargets="_PreserveUnsigned;ListFiles">
     <ItemGroup>
       <PylanceFilesToSign Include="$(BinariesOutputPath)pylance\**\*.js" />
@@ -91,6 +99,23 @@
         <Authenticode>Microsoft400</Authenticode>
         <StrongName></StrongName>
         <SignedPath>$(BinariesOutputPath)pylance\%(RecursiveDir)%(Filename)%(Extension)</SignedPath>
+        <UnsignedPath>$(UnsignedOutputPath)%(RecursiveDir)%(Filename)%(Extension)</UnsignedPath>
+      </FilesToSign>
+    </ItemGroup>
+  </Target>
+
+  <!-- 
+    These 3rd party files do not exist in the binary output path. They are already in the layout path, waiting to be packaged into a vsix. 
+    Because of this, they don't need to be copied anywhere, they are just signed "in place", before the vsix is signed.
+  -->
+  <Target Name="_AddTemplateFiles" BeforeTargets="_PreserveUnsigned;ListFiles">
+    <ItemGroup>
+      <TemplateFilesToSign Include="$(LayoutOutputPath)Microsoft.PythonTools.Templates\ProjectTemplates\Python\Web\**\*.js"/>
+      <TemplateFilesToSign Include="$(LayoutOutputPath)Microsoft.PythonTools.Templates\ProjectTemplates\Python\Web\**\*.ttf"/>
+      <FilesToSign Include="@(TemplateFilesToSign)">
+        <Authenticode>3PartyScriptsSHA2</Authenticode>
+        <StrongName></StrongName>
+        <SignedPath>$(LayoutOutputPath)Microsoft.PythonTools.Templates\ProjectTemplates\Python\Web\%(RecursiveDir)%(Filename)%(Extension)</SignedPath>
         <UnsignedPath>$(UnsignedOutputPath)%(RecursiveDir)%(Filename)%(Extension)</UnsignedPath>
       </FilesToSign>
     </ItemGroup>
